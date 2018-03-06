@@ -1,0 +1,22 @@
+//#include "cardConfig.h"
+#include "global.h"
+#include "includes.h"
+#include "main.h"
+
+const ExceptionBugData FlashExpBug = {        //
+    0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 
+    0xffffffff, 0xffffffff, 0xffffffff, 
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 
+    };
+
+const Uint32 FlashbufFlag = 0x12345678;
+
+const ExceptionBugData FlashExpBugZero = {        //
+    0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 
+    0xffffffff, 0xffffffff, 0xffffffff, 
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 
+    };

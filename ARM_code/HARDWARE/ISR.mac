@@ -1,0 +1,69 @@
+;********************************************************************************************************
+;                                 
+; (c) Copyright 2004, SUPCON
+;         All Rights Reserved
+;
+;            ARM7 Port
+;            SDT V2.51
+;
+; Description : MACRO for uC/OS-II Interrupt Service Routines(ISRs)
+; File        : isr.mac
+; By          : ShiMiaoHua
+; Data        :
+;********************************************************************************************************
+
+
+    MACRO
+    uCOS_ISR   $FUN,$OS_CPU_IRQ_ISR_1
+        
+        STMFD   SP!, {R1-R3}                                  
+
+        MOV     R1, SP                          ; Save   IRQ stack pointer        
+        ADD     SP, SP,#12                      ; Adjust IRQ stack pointer         
+        SUB     R2, LR,#4                       ; Adjust PC for return address to task
+        MRS     R3, SPSR                        ; Copy SPSR (i.e. interrupted task's CPSR) to R3
+        
+        MSR     CPSR_c, #(NO_INT | SVC32_MODE)  ; Change to SYS mode
+
+        STMFD   SP!, {R2}
+        STMFD   SP!, {LR}
+        STMFD   SP!, {R4-R12} 
+        
+        LDMFD   R1!, {R4-R6}
+        STMFD   SP!, {R4-R6}
+        
+        STMFD   SP!, {R0}
+        STMFD   SP!, {R3}
+                                                ; HANDLE NESTING COUNTER
+        LDR     R0, Ptr_OS_IntNesting           ; OSIntNesting++;
+        LDRB    R1, [R0]
+        ADD     R1, R1,#1
+        STRB    R1, [R0]
+
+        CMP     R1, #1                          ; if (OSIntNesting == 1) {
+        BNE     $OS_CPU_IRQ_ISR_1
+
+        LDR     R4, Ptr_OS_TCBCur               ;     OSTCBCur->OSTCBStkPtr = SP
+        LDR     R5, [R4]
+        STR     SP, [R5]                        ; }
+
+$OS_CPU_IRQ_ISR_1
+        MSR     CPSR_c, #(NO_INT | IRQ32_MODE)  ; Change to IRQ mode (to use the IRQ stack to handle interrupt)
+        LDR		R0, =INTatEnter		;
+        STR		LR,	[R0]
+        BL      $FUN                            ; OS_CPU_IRQ_ISR_Handler();
+       
+        LDR     R0, =AIC_BASE
+        STR     R0, [R0,#AIC_EOICR]
+        
+        MSR     CPSR_c, #(NO_INT | SVC32_MODE)  ; Change to SYS mode
+        
+        BL      OSIntExit                       ; OSIntExit();
+        
+                                                ; RESTORE TASK'S CONTEXT and RETURN TO TASK
+        LDMFD   SP!, {R4}                       ;    pop new task's CPSR
+        MSR     SPSR_cxsf, R4
+        LDMFD   SP!,{R0-R12,LR,PC}^             ; pop new task's R0-R12,LR & PC
+    MEND
+        
+    END
